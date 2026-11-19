@@ -1,0 +1,227 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "Authenticated player or founder account with Virtual ID, profile details, wallet balances, status, and game stats.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID matching document ID." },
+        "virtualId": { "type": "string", "description": "Unique player Virtual ID (e.g. VGD-4K9P2M)." },
+        "email": { "type": "string", "description": "Verified Google account email." },
+        "displayName": { "type": "string", "description": "User full display name." },
+        "nickname": { "type": "string", "description": "Optional player nickname." },
+        "gender": { "type": "string", "description": "Optional player gender selection." },
+        "dob": { "type": "string", "description": "Optional date of birth string (DD/MM/YYYY)." },
+        "photoBase64": { "type": "string", "description": "Optional compressed JPEG profile photo Base64 string." },
+        "role": { "type": "string", "enum": ["founder", "player"], "description": "Access role enforced by security rules." },
+        "accountStatus": { "type": "string", "enum": ["active", "suspended"], "description": "Account access state." },
+        "diamonds": { "type": "integer", "description": "Current Diamond balance." },
+        "coins": { "type": "integer", "description": "Current Coin balance." },
+        "totalExchangesCount": { "type": "integer", "description": "Number of Diamond-to-Coin exchanges completed." },
+        "totalDiamondsExchanged": { "type": "integer", "description": "Cumulative Diamonds exchanged." },
+        "totalCoinsDistributed": { "type": "integer", "description": "Cumulative Net Coins received from exchanges." },
+        "gamesPlayed": { "type": "integer", "description": "Housie matches joined." },
+        "gamesWon": { "type": "integer", "description": "Housie claims won." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": [
+        "userId", "email", "displayName", "role", "accountStatus",
+        "diamonds", "coins", "totalExchangesCount", "totalDiamondsExchanged",
+        "totalCoinsDistributed", "gamesPlayed", "gamesWon", "createdAt", "updatedAt"
+      ]
+    },
+    "VirtualIdDirectoryEntry": {
+      "title": "VirtualIdDirectoryEntry",
+      "description": "Public Virtual ID lookup record containing chat-safe profile fields (no PII/wallet balances).",
+      "type": "object",
+      "properties": {
+        "virtualId": { "type": "string" },
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "nickname": { "type": "string" },
+        "gender": { "type": "string" },
+        "photoBase64": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["virtualId", "userId", "displayName", "createdAt", "updatedAt"]
+    },
+    "ChatThread": {
+      "title": "ChatThread",
+      "description": "1v1 private chat thread metadata between two participants.",
+      "type": "object",
+      "properties": {
+        "participantIds": { "type": "array", "description": "Bounded 2-element list of participant UIDs." },
+        "user1Id": { "type": "string" },
+        "user1VirtualId": { "type": "string" },
+        "user1Name": { "type": "string" },
+        "user1Photo": { "type": "string" },
+        "user2Id": { "type": "string" },
+        "user2VirtualId": { "type": "string" },
+        "user2Name": { "type": "string" },
+        "user2Photo": { "type": "string" },
+        "lastMessageText": { "type": "string" },
+        "lastSenderId": { "type": "string" },
+        "lastMessageAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "participantIds", "user1Id", "user1VirtualId", "user1Name",
+        "user2Id", "user2VirtualId", "user2Name",
+        "lastMessageText", "lastSenderId", "lastMessageAtMillis",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual 1v1 chat message inside a thread.",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderVirtualId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "participantIds": { "type": "array" },
+        "timestampMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "chatId", "senderId", "senderVirtualId", "senderName",
+        "text", "participantIds", "timestampMillis", "createdAt"
+      ]
+    },
+    "UserExchangeRecord": {
+      "title": "UserExchangeRecord",
+      "description": "Per-user Diamond to Coins exchange receipt.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "diamondsExchanged": { "type": "integer" },
+        "grossCoins": { "type": "integer" },
+        "netCoinsReceived": { "type": "integer" },
+        "adminFeeCoins": { "type": "integer" },
+        "timestampMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "diamondsExchanged", "grossCoins", "netCoinsReceived", "adminFeeCoins", "timestampMillis", "createdAt"]
+    },
+    "UserWalletActivity": {
+      "title": "UserWalletActivity",
+      "description": "Per-user wallet credit/debit ledger item.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "amountDeltaText": { "type": "string" },
+        "timestampMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "title", "subtitle", "amountDeltaText", "timestampMillis", "createdAt"]
+    },
+    "PlatformExchangeLedgerEntry": {
+      "title": "PlatformExchangeLedgerEntry",
+      "description": "Global platform exchange ledger visible only to the Founder for fee profit tracking.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "diamondsExchanged": { "type": "integer" },
+        "grossCoins": { "type": "integer" },
+        "netCoinsReceived": { "type": "integer" },
+        "adminFeeCoins": { "type": "integer" },
+        "timestampMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userEmail", "userName", "diamondsExchanged", "grossCoins", "netCoinsReceived", "adminFeeCoins", "timestampMillis", "createdAt"]
+    },
+    "PlatformConfig": {
+      "title": "PlatformConfig",
+      "description": "Global app switches, live announcement banner, room pricing, and founder mint counters.",
+      "type": "object",
+      "properties": {
+        "configId": { "type": "string" },
+        "exchangeEnabled": { "type": "boolean" },
+        "maintenanceMode": { "type": "boolean" },
+        "announcementBanner": { "type": "string" },
+        "smallEntryCoins": { "type": "integer" },
+        "smallPrizeDiamonds": { "type": "integer" },
+        "mediumEntryCoins": { "type": "integer" },
+        "mediumPrizeDiamonds": { "type": "integer" },
+        "bigEntryCoins": { "type": "integer" },
+        "bigPrizeDiamonds": { "type": "integer" },
+        "vipEntryCoins": { "type": "integer" },
+        "vipPrizeDiamonds": { "type": "integer" },
+        "totalCoinsGeneratedByFounder": { "type": "integer" },
+        "totalDiamondsGeneratedByFounder": { "type": "integer" },
+        "updatedByEmail": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "configId", "exchangeEnabled", "maintenanceMode", "announcementBanner",
+        "smallEntryCoins", "smallPrizeDiamonds", "mediumEntryCoins", "mediumPrizeDiamonds",
+        "bigEntryCoins", "bigPrizeDiamonds", "vipEntryCoins", "vipPrizeDiamonds",
+        "totalCoinsGeneratedByFounder", "totalDiamondsGeneratedByFounder", "updatedByEmail", "updatedAt"
+      ]
+    },
+    "FounderAuditLog": {
+      "title": "FounderAuditLog",
+      "description": "Immutable log of all Founder actions (coin/diamond generation, account status, app settings).",
+      "type": "object",
+      "properties": {
+        "actorUid": { "type": "string" },
+        "actorEmail": { "type": "string" },
+        "actionType": { "type": "string" },
+        "targetUserId": { "type": "string" },
+        "targetEmail": { "type": "string" },
+        "summary": { "type": "string" },
+        "timestampMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["actorUid", "actorEmail", "actionType", "targetUserId", "targetEmail", "summary", "timestampMillis", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccount" },
+      "description": "User profiles, Virtual ID, wallet balances, and status flags."
+    },
+    "/users/{userId}/exchanges/{exchangeId}": {
+      "schema": { "$ref": "#/entities/UserExchangeRecord" },
+      "description": "User's personal exchange history."
+    },
+    "/users/{userId}/activities/{activityId}": {
+      "schema": { "$ref": "#/entities/UserWalletActivity" },
+      "description": "User's wallet credit and debit activity log."
+    },
+    "/virtual_ids/{virtualId}": {
+      "schema": { "$ref": "#/entities/VirtualIdDirectoryEntry" },
+      "description": "Public Virtual ID lookup directory for starting 1v1 chats without exposing PII."
+    },
+    "/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/ChatThread" },
+      "description": "1v1 private inbox chat threads."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "1v1 chat messages with denormalized participantIds."
+    },
+    "/exchange_ledger/{recordId}": {
+      "schema": { "$ref": "#/entities/PlatformExchangeLedgerEntry" },
+      "description": "Global exchange fee profit ledger readable only by Founder."
+    },
+    "/app_config/{configId}": {
+      "schema": { "$ref": "#/entities/PlatformConfig" },
+      "description": "Global platform configuration document (doc ID: platform)."
+    },
+    "/founder_audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/FounderAuditLog" },
+      "description": "Audit log of Founder actions."
+    }
+  }
+}

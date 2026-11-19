@@ -1,0 +1,388 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function isValidVirtualId(vid) {
+      return vid is string && vid.size() >= 6 && vid.size() <= 16 && vid.matches('^VGD-[A-Z0-9]{4,12}$');
+    }
+
+    // Exclusive Founder identity gate: verified Google email must match vinayakglobaldream@gmail.com
+    function isFounder() {
+      return isSignedIn() &&
+             request.auth.token.email_verified == true &&
+             request.auth.token.email is string &&
+             request.auth.token.email.lower() == 'vinayakglobaldream@gmail.com';
+    }
+
+    function isValidUserAccount(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.email is string && data.email.size() <= 200 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             (!('virtualId' in data) || isValidVirtualId(data.virtualId)) &&
+             (!('nickname' in data) || (data.nickname is string && data.nickname.size() <= 40)) &&
+             (!('gender' in data) || (data.gender is string && data.gender.size() <= 30)) &&
+             (!('dob' in data) || (data.dob is string && data.dob.size() <= 20)) &&
+             (!('photoBase64' in data) || (data.photoBase64 is string && data.photoBase64.size() <= 150000)) &&
+             data.role in ['founder', 'player'] &&
+             data.accountStatus in ['active', 'suspended'] &&
+             data.diamonds is int && data.diamonds >= 0 && data.diamonds <= 1000000000 &&
+             data.coins is int && data.coins >= 0 && data.coins <= 1000000000 &&
+             data.totalExchangesCount is int && data.totalExchangesCount >= 0 &&
+             data.totalDiamondsExchanged is int && data.totalDiamondsExchanged >= 0 &&
+             data.totalCoinsDistributed is int && data.totalCoinsDistributed >= 0 &&
+             data.gamesPlayed is int && data.gamesPlayed >= 0 &&
+             data.gamesWon is int && data.gamesWon >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidVirtualIdEntry(data) {
+      return isValidVirtualId(data.virtualId) &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             (!('nickname' in data) || (data.nickname is string && data.nickname.size() <= 40)) &&
+             (!('gender' in data) || (data.gender is string && data.gender.size() <= 30)) &&
+             (!('photoBase64' in data) || (data.photoBase64 is string && data.photoBase64.size() <= 150000)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidChatThread(data) {
+      return data.participantIds is list && data.participantIds.size() == 2 &&
+             data.participantIds[0] is string && data.participantIds[1] is string &&
+             data.user1Id is string && data.user1Id.size() >= 1 && data.user1Id.size() <= 128 &&
+             data.user2Id is string && data.user2Id.size() >= 1 && data.user2Id.size() <= 128 &&
+             data.user1Id != data.user2Id &&
+             data.user1VirtualId is string && data.user1VirtualId.size() >= 1 && data.user1VirtualId.size() <= 20 &&
+             data.user2VirtualId is string && data.user2VirtualId.size() >= 1 && data.user2VirtualId.size() <= 20 &&
+             data.user1Name is string && data.user1Name.size() >= 1 && data.user1Name.size() <= 100 &&
+             data.user2Name is string && data.user2Name.size() >= 1 && data.user2Name.size() <= 100 &&
+             (!('user1Photo' in data) || (data.user1Photo is string && data.user1Photo.size() <= 150000)) &&
+             (!('user2Photo' in data) || (data.user2Photo is string && data.user2Photo.size() <= 150000)) &&
+             data.lastMessageText is string && data.lastMessageText.size() <= 1000 &&
+             data.lastSenderId is string && data.lastSenderId.size() <= 128 &&
+             data.lastMessageAtMillis is int && data.lastMessageAtMillis >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidChatMessage(data) {
+      return data.chatId is string && data.chatId.size() >= 1 && data.chatId.size() <= 128 &&
+             data.senderId is string && data.senderId.size() >= 1 && data.senderId.size() <= 128 &&
+             data.senderVirtualId is string && data.senderVirtualId.size() >= 1 && data.senderVirtualId.size() <= 20 &&
+             data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 100 &&
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 1000 &&
+             data.participantIds is list && data.participantIds.size() == 2 &&
+             data.participantIds[0] is string && data.participantIds[1] is string &&
+             data.timestampMillis is int && data.timestampMillis >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidUserExchangeRecord(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.diamondsExchanged is int && data.diamondsExchanged >= 150 && data.diamondsExchanged <= 100000000 &&
+             data.grossCoins is int && data.grossCoins >= 0 && data.grossCoins <= 1000000000 &&
+             data.netCoinsReceived is int && data.netCoinsReceived >= 0 && data.netCoinsReceived <= 1000000000 &&
+             data.adminFeeCoins is int && data.adminFeeCoins >= 0 && data.adminFeeCoins <= 1000000000 &&
+             data.timestampMillis is int && data.timestampMillis >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidUserWalletActivity(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.type is string && data.type.size() >= 1 && data.type.size() <= 40 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+             data.subtitle is string && data.subtitle.size() <= 200 &&
+             data.amountDeltaText is string && data.amountDeltaText.size() >= 1 && data.amountDeltaText.size() <= 80 &&
+             data.timestampMillis is int && data.timestampMillis >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidPlatformExchangeLedgerEntry(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userEmail is string && data.userEmail.size() <= 200 &&
+             data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 100 &&
+             data.diamondsExchanged is int && data.diamondsExchanged >= 150 && data.diamondsExchanged <= 100000000 &&
+             data.grossCoins is int && data.grossCoins >= 0 && data.grossCoins <= 1000000000 &&
+             data.netCoinsReceived is int && data.netCoinsReceived >= 0 && data.netCoinsReceived <= 1000000000 &&
+             data.adminFeeCoins is int && data.adminFeeCoins >= 0 && data.adminFeeCoins <= 1000000000 &&
+             data.timestampMillis is int && data.timestampMillis >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidPlatformConfig(data) {
+      return data.configId == 'platform' &&
+             data.exchangeEnabled is bool &&
+             data.maintenanceMode is bool &&
+             data.announcementBanner is string && data.announcementBanner.size() <= 300 &&
+             data.smallEntryCoins is int && data.smallEntryCoins >= 0 && data.smallEntryCoins <= 100000000 &&
+             data.smallPrizeDiamonds is int && data.smallPrizeDiamonds >= 0 && data.smallPrizeDiamonds <= 100000000 &&
+             data.mediumEntryCoins is int && data.mediumEntryCoins >= 0 && data.mediumEntryCoins <= 100000000 &&
+             data.mediumPrizeDiamonds is int && data.mediumPrizeDiamonds >= 0 && data.mediumPrizeDiamonds <= 100000000 &&
+             data.bigEntryCoins is int && data.bigEntryCoins >= 0 && data.bigEntryCoins <= 100000000 &&
+             data.bigPrizeDiamonds is int && data.bigPrizeDiamonds >= 0 && data.bigPrizeDiamonds <= 100000000 &&
+             data.vipEntryCoins is int && data.vipEntryCoins >= 0 && data.vipEntryCoins <= 100000000 &&
+             data.vipPrizeDiamonds is int && data.vipPrizeDiamonds >= 0 && data.vipPrizeDiamonds <= 100000000 &&
+             data.totalCoinsGeneratedByFounder is int && data.totalCoinsGeneratedByFounder >= 0 && data.totalCoinsGeneratedByFounder <= 1000000000 &&
+             data.totalDiamondsGeneratedByFounder is int && data.totalDiamondsGeneratedByFounder >= 0 && data.totalDiamondsGeneratedByFounder <= 1000000000 &&
+             data.updatedByEmail is string && data.updatedByEmail.size() <= 200 &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidFounderAuditLog(data) {
+      return data.actorUid is string && data.actorUid.size() >= 1 && data.actorUid.size() <= 128 &&
+             data.actorEmail is string && data.actorEmail.size() <= 200 &&
+             data.actionType is string && data.actionType.size() >= 1 && data.actionType.size() <= 50 &&
+             data.targetUserId is string && data.targetUserId.size() <= 128 &&
+             data.targetEmail is string && data.targetEmail.size() <= 200 &&
+             data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 300 &&
+             data.timestampMillis is int && data.timestampMillis >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isFounder());
+      allow list: if isFounder();
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'email', 'displayName', 'role', 'accountStatus',
+                         'diamonds', 'coins', 'totalExchangesCount', 'totalDiamondsExchanged',
+                         'totalCoinsDistributed', 'gamesPlayed', 'gamesWon', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'virtualId', 'email', 'displayName', 'nickname', 'gender', 'dob', 'photoBase64',
+                         'role', 'accountStatus', 'diamonds', 'coins', 'totalExchangesCount', 'totalDiamondsExchanged',
+                         'totalCoinsDistributed', 'gamesPlayed', 'gamesWon', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserAccount(incoming()) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().accountStatus == 'active' &&
+                       incoming().role == (isFounder() ? 'founder' : 'player') &&
+                       incoming().diamonds == 5000 &&
+                       incoming().coins == 0 &&
+                       incoming().totalExchangesCount == 0 &&
+                       incoming().totalDiamondsExchanged == 0 &&
+                       incoming().totalCoinsDistributed == 0 &&
+                       incoming().gamesPlayed == 0 &&
+                       incoming().gamesWon == 0;
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidUserAccount(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         (isFounder() && incoming().diff(existing()).affectedKeys().hasOnly([
+                           'diamonds', 'coins', 'accountStatus', 'displayName', 'updatedAt'
+                         ])) ||
+                         (request.auth.uid == userId &&
+                          existing().accountStatus == 'active' &&
+                          incoming().role == existing().role &&
+                          incoming().accountStatus == existing().accountStatus &&
+                          (!('virtualId' in existing()) || !('virtualId' in incoming()) || incoming().virtualId == existing().virtualId) &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'diamonds', 'coins', 'totalExchangesCount', 'totalDiamondsExchanged',
+                            'totalCoinsDistributed', 'gamesPlayed', 'gamesWon',
+                            'displayName', 'nickname', 'gender', 'dob', 'photoBase64', 'virtualId', 'email', 'updatedAt'
+                          ]))
+                       );
+
+      allow delete: if isFounder() && isValidId(userId) && userId != request.auth.uid;
+
+      match /exchanges/{exchangeId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(exchangeId) && (request.auth.uid == userId || isFounder());
+        allow list: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isFounder());
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(exchangeId) &&
+                         (request.auth.uid == userId || isFounder()) &&
+                         incoming().keys().hasAll(['userId', 'diamondsExchanged', 'grossCoins', 'netCoinsReceived', 'adminFeeCoins', 'timestampMillis', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'diamondsExchanged', 'grossCoins', 'netCoinsReceived', 'adminFeeCoins', 'timestampMillis', 'createdAt']) &&
+                         incoming().userId == userId &&
+                         isValidUserExchangeRecord(incoming());
+        allow update, delete: if false;
+      }
+
+      match /activities/{activityId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(activityId) && (request.auth.uid == userId || isFounder());
+        allow list: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isFounder());
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(activityId) &&
+                         (request.auth.uid == userId || isFounder()) &&
+                         incoming().keys().hasAll(['userId', 'type', 'title', 'subtitle', 'amountDeltaText', 'timestampMillis', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'type', 'title', 'subtitle', 'amountDeltaText', 'timestampMillis', 'createdAt']) &&
+                         incoming().userId == userId &&
+                         isValidUserWalletActivity(incoming());
+        allow update, delete: if false;
+      }
+    }
+
+    match /virtual_ids/{virtualId} {
+      // Exact point-lookup by Virtual ID for starting 1v1 chats; no blanket list scraping.
+      allow get: if isSignedIn() && isValidVirtualId(virtualId);
+      allow list: if isFounder() || (isSignedIn() && existing().userId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidVirtualId(virtualId) &&
+                       incoming().virtualId == virtualId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['virtualId', 'userId', 'displayName', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['virtualId', 'userId', 'displayName', 'nickname', 'gender', 'photoBase64', 'createdAt', 'updatedAt']) &&
+                       isValidVirtualIdEntry(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidVirtualId(virtualId) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().virtualId == existing().virtualId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidVirtualIdEntry(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'nickname', 'gender', 'photoBase64', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    match /chats/{chatId} {
+      allow get: if isSignedIn() &&
+                    isValidId(chatId) &&
+                    (
+                      (resource == null && (chatId.matches('^' + request.auth.uid + '_.*') || chatId.matches('.*_' + request.auth.uid + '$'))) ||
+                      (resource != null && request.auth.uid in existing().participantIds)
+                    );
+      allow list: if isSignedIn() && request.auth.uid in existing().participantIds;
+
+      allow create: if isSignedIn() &&
+                       isValidId(chatId) &&
+                       incoming().keys().hasAll([
+                         'participantIds', 'user1Id', 'user1VirtualId', 'user1Name',
+                         'user2Id', 'user2VirtualId', 'user2Name',
+                         'lastMessageText', 'lastSenderId', 'lastMessageAtMillis', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'participantIds', 'user1Id', 'user1VirtualId', 'user1Name', 'user1Photo',
+                         'user2Id', 'user2VirtualId', 'user2Name', 'user2Photo',
+                         'lastMessageText', 'lastSenderId', 'lastMessageAtMillis', 'createdAt', 'updatedAt'
+                       ]) &&
+                       request.auth.uid in incoming().participantIds &&
+                       incoming().participantIds.hasAll([incoming().user1Id, incoming().user2Id]) &&
+                       isValidChatThread(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(chatId) &&
+                       request.auth.uid in existing().participantIds &&
+                       incoming().participantIds == existing().participantIds &&
+                       incoming().user1Id == existing().user1Id &&
+                       incoming().user2Id == existing().user2Id &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidChatThread(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'lastMessageText', 'lastSenderId', 'lastMessageAtMillis',
+                         'user1Name', 'user1Photo', 'user1VirtualId',
+                         'user2Name', 'user2Photo', 'user2VirtualId', 'updatedAt'
+                       ]);
+
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && isValidId(chatId) && isValidId(messageId) && request.auth.uid in existing().participantIds;
+        allow list: if isSignedIn() && isValidId(chatId) && request.auth.uid in existing().participantIds;
+
+        allow create: if isSignedIn() &&
+                         isValidId(chatId) &&
+                         isValidId(messageId) &&
+                         incoming().keys().hasAll([
+                           'chatId', 'senderId', 'senderVirtualId', 'senderName',
+                           'text', 'participantIds', 'timestampMillis', 'createdAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'chatId', 'senderId', 'senderVirtualId', 'senderName',
+                           'text', 'participantIds', 'timestampMillis', 'createdAt'
+                         ]) &&
+                         incoming().chatId == chatId &&
+                         incoming().senderId == request.auth.uid &&
+                         request.auth.uid in incoming().participantIds &&
+                         existsAfter(/databases/$(database)/documents/chats/$(chatId)) &&
+                         isValidChatMessage(incoming());
+
+        allow update, delete: if false;
+      }
+    }
+
+    match /exchange_ledger/{recordId} {
+      allow get: if isFounder() && isValidId(recordId);
+      allow list: if isFounder();
+      allow create: if isSignedIn() &&
+                       isValidId(recordId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'userEmail', 'userName', 'diamondsExchanged',
+                         'grossCoins', 'netCoinsReceived', 'adminFeeCoins', 'timestampMillis', 'createdAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'userEmail', 'userName', 'diamondsExchanged',
+                         'grossCoins', 'netCoinsReceived', 'adminFeeCoins', 'timestampMillis', 'createdAt'
+                       ]) &&
+                       incoming().userId == request.auth.uid &&
+                       isValidPlatformExchangeLedgerEntry(incoming());
+      allow update, delete: if false;
+    }
+
+    match /app_config/{configId} {
+      allow get: if isSignedIn() && isValidId(configId);
+      allow list: if isFounder();
+      allow create: if isFounder() &&
+                       isValidId(configId) &&
+                       configId == 'platform' &&
+                       incoming().keys().hasAll([
+                         'configId', 'exchangeEnabled', 'maintenanceMode', 'announcementBanner',
+                         'smallEntryCoins', 'smallPrizeDiamonds', 'mediumEntryCoins', 'mediumPrizeDiamonds',
+                         'bigEntryCoins', 'bigPrizeDiamonds', 'vipEntryCoins', 'vipPrizeDiamonds',
+                         'totalCoinsGeneratedByFounder', 'totalDiamondsGeneratedByFounder', 'updatedByEmail', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'configId', 'exchangeEnabled', 'maintenanceMode', 'announcementBanner',
+                         'smallEntryCoins', 'smallPrizeDiamonds', 'mediumEntryCoins', 'mediumPrizeDiamonds',
+                         'bigEntryCoins', 'bigPrizeDiamonds', 'vipEntryCoins', 'vipPrizeDiamonds',
+                         'totalCoinsGeneratedByFounder', 'totalDiamondsGeneratedByFounder', 'updatedByEmail', 'updatedAt'
+                       ]) &&
+                       isValidPlatformConfig(incoming());
+      allow update: if isFounder() &&
+                       isValidId(configId) &&
+                       configId == 'platform' &&
+                       isValidPlatformConfig(incoming());
+      allow delete: if false;
+    }
+
+    match /founder_audit_logs/{logId} {
+      allow get: if isFounder() && isValidId(logId);
+      allow list: if isFounder();
+      allow create: if isFounder() &&
+                       isValidId(logId) &&
+                       incoming().actorUid == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'actorUid', 'actorEmail', 'actionType', 'targetUserId',
+                         'targetEmail', 'summary', 'timestampMillis', 'createdAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'actorUid', 'actorEmail', 'actionType', 'targetUserId',
+                         'targetEmail', 'summary', 'timestampMillis', 'createdAt'
+                       ]) &&
+                       isValidFounderAuditLog(incoming());
+      allow update, delete: if false;
+    }
+  }
+}

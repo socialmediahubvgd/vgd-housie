@@ -1,0 +1,87 @@
+<resources>
+    <string name="app_name">VGD Housie</string>
+    <string name="brand_subtitle">Royal Housie Wallet</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Rooms</string>
+    <string name="nav_wallet">Wallet</string>
+    <string name="nav_exchange">Exchange</string>
+    <string name="nav_inbox">Inbox</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_admin">Founder</string>
+
+    <!-- Game Rooms & Home -->
+    <string name="home_rooms_title">Housie Game Rooms</string>
+    <string name="home_rooms_subtitle">Join a room with Coins and win Diamonds</string>
+    <string name="btn_play_housie">Play Housie</string>
+    <string name="btn_join_room">Join</string>
+    <string name="entry_label">Entry</string>
+    <string name="prize_label">Prize</string>
+
+    <!-- Game Board -->
+    <string name="number_caller_label">Number Caller</string>
+    <string name="calling_every_4s">Calling a new number every 4s</string>
+    <string name="last_5_numbers_title">Last 5 Numbers</string>
+    <string name="claim_prizes_title">Claim Win</string>
+    <string name="wrong_claim_message">Wrong Claim</string>
+    <string name="game_over_title">Game Over</string>
+    <string name="play_again_action">Play Again</string>
+    <string name="back_to_rooms">Rooms</string>
+
+    <!-- Wallet -->
+    <string name="wallet_title">My Wallet</string>
+    <string name="my_diamonds_label">My Diamonds</string>
+    <string name="my_coins_label">My Coins</string>
+    <string name="btn_buy_coins">Buy Coins</string>
+    <string name="btn_withdraw_diamond">Withdraw Diamond</string>
+    <string name="btn_exchange_diamond">Exchange Diamond</string>
+    <string name="exchange_history_title">Exchange History</string>
+    <string name="wallet_activity_title">Wallet Activity</string>
+    <string name="empty_exchange_history_title">No Exchanges Yet</string>
+    <string name="empty_exchange_history_subtitle">Convert your Diamonds to Coins instantly at a fixed rate with transparent 10% fee.</string>
+    <string name="go_to_exchange">Exchange Now</string>
+
+    <!-- Exchange Page -->
+    <string name="exchange_page_title">Diamond Exchange</string>
+    <string name="select_diamonds_title">Select Diamonds to Exchange</string>
+    <string name="enter_diamonds_label">Enter Diamond Amount</string>
+    <string name="btn_exchange_now">Exchange Now</string>
+    <string name="fixed_rates_title">Fixed Exchange Rates</string>
+    <string name="min_exchange_badge">Minimum Exchange: 150 Diamond</string>
+    <string name="rate_tier_1">150 Diamond = 100 Coins</string>
+    <string name="rate_tier_2">1,500 Diamond = 1,000 Coins</string>
+    <string name="rate_tier_3">15,000 Diamond = 10,000 Coins</string>
+    <string name="fee_rule_note">10% Exchange Fee goes to Admin (e.g., 1,500 Diamond = 900 Coins to you + 100 Coins Admin Fee)</string>
+    <string name="live_breakdown_title">Live Exchange Breakdown</string>
+    <string name="gross_coins_label">Base Value (Gross)</string>
+    <string name="exchange_fee_label">Exchange Fee (10% Admin)</string>
+    <string name="net_coins_label">You Receive (Net)</string>
+    <string name="err_min_diamond">Minimum Exchange: 150 Diamond</string>
+    <string name="err_insufficient_diamonds">Insufficient Diamond balance</string>
+
+    <!-- Dialogs & Animations -->
+    <string name="confirm_exchange_title">Confirm Exchange</string>
+    <string name="confirm_action">Confirm</string>
+    <string name="cancel_action">Cancel</string>
+    <string name="exchange_successful_title">Exchange Successful!</string>
+    <string name="done_action">Done</string>
+    <string name="buy_coins_title">Buy Coins</string>
+    <string name="buy_coins_subtitle">Choose a coin bundle to add to your VGD Housie wallet.</string>
+    <string name="withdraw_diamond_title">Withdraw Diamond</string>
+    <string name="withdraw_diamond_subtitle">Withdraw Diamonds directly from your wallet balance.</string>
+    <string name="withdraw_destination_label">UPI ID / Player Handle</string>
+    <string name="withdraw_amount_label">Diamonds to Withdraw</string>
+    <string name="withdraw_action">Withdraw</string>
+
+    <!-- Admin Panel -->
+    <string name="admin_panel_title">Founder Panel</string>
+    <string name="admin_profit_title">Exchange Fee Profit (10%)</string>
+    <string name="total_exchanges_label">Total Exchanges</string>
+    <string name="total_diamonds_exchanged_label">Diamonds Exchanged</string>
+    <string name="total_coins_credited_label">Coins Credited</string>
+    <string name="admin_records_title">Total Exchange Records</string>
+    <string name="empty_admin_records">No exchange records recorded yet.</string>
+    <string name="admin_test_credit_title">Test Credit Tools</string>
+    <string name="admin_add_1500_diamonds">+1,500 Diamonds</string>
+    <string name="admin_add_15000_diamonds">+15,000 Diamonds</string>
+</resources>

@@ -1,0 +1,6 @@
+{
+  "name": "VGD Housie",
+  "description": "VGD Housie wallet and Diamond-to-Coins exchange system with fixed conversion rates, 10% admin fee calculation, live preview, confetti success animation, exchange history, and admin profit panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
